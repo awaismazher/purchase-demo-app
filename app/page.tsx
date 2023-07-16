@@ -1,3 +1,6 @@
+"use client";
+
+import { Toaster } from "@/components/ui/toaster"
 import { PurchaseForm } from "@/components/purchase-form"
 
 function Page() {
@@ -9,6 +12,7 @@ function Page() {
         </h1>
         <PurchaseForm />
       </div>
+      <Toaster />
     </>
   )
 }

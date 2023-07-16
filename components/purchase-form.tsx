@@ -1,9 +1,13 @@
 "use client"
 
-import Link from "next/link"
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import {
+  AlertTriangle as AlertTriangleIcon,
+  Calendar as CalendarIcon,
+  X as XIcon,
+} from "lucide-react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 
@@ -25,6 +29,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useToast } from "@/components/ui/use-toast"
+
+import { Skeleton } from "./ui/skeleton"
 
 const MAX_FILE_SIZE = 500000
 const ACCEPTED_FILE_TYPES = ["text/csv", "application/vnd.ms-excel"]
@@ -46,6 +53,12 @@ const formSchema = z.object({
 })
 
 export function PurchaseForm() {
+  const [file, setFile] = useState<File | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<any>(null)
+
+  const { toast } = useToast()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,12 +67,60 @@ export function PurchaseForm() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const formData = new FormData()
+    formData.append("vendor", values.vendor)
+    formData.append("date", values.date.toISOString())
+    formData.append("csvFile", file as File)
+
+    try {
+      setIsLoading(true)
+      setError(null)
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        toast({
+          title: "Your purchase has been submitted.",
+          description: JSON.stringify(data.data),
+        })
+      }
+    } catch (error: any) {
+      setError("Something went wrong, please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <Form {...form}>
+      {error && (
+        <div className="p-4 mb-4 text-white bg-red-500 rounded-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="flex-shrink-0">
+                <AlertTriangleIcon className="w-5 h-5" />
+              </div>
+              <div className="text-sm font-medium">{error}</div>
+            </div>
+            <div className="flex-shrink-0">
+              <Button
+                variant="ghost"
+                onClick={() => setError(null)}
+                className="text-white"
+              >
+                <XIcon className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
@@ -121,10 +182,13 @@ export function PurchaseForm() {
               <FormLabel>CSV File</FormLabel>
               <FormControl>
                 <Input
-                  id="csvFile"
                   type="file"
                   {...field}
                   accept={ACCEPTED_FILE_TYPES.join(", ")}
+                  onChange={(e) => {
+                    setFile(e.target?.files[0])
+                    field.onChange(e)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -132,10 +196,15 @@ export function PurchaseForm() {
           )}
         />
         <div className="text-right">
-          <Button type="submit">Submit</Button>
+          {!isLoading ? (
+            <Button className="w-[64px] h-[35px]" type="submit" disabled={!form.formState.isValid}>
+              Submit
+            </Button>
+          ) : (
+            <Skeleton className="w-[64px] h-[35px] ml-auto" />
+          )}
         </div>
       </form>
     </Form>
   )
 }
-
