@@ -164,6 +164,7 @@ export function PurchaseForm() {
                   <Calendar
                     mode="single"
                     selected={field.value}
+                    // @ts-ignore
                     onSelect={field.onChange}
                     disabled={(date) => date < new Date("1900-01-01")}
                     initialFocus
@@ -186,6 +187,7 @@ export function PurchaseForm() {
                   {...field}
                   accept={ACCEPTED_FILE_TYPES.join(", ")}
                   onChange={(e) => {
+                    // @ts-ignore
                     setFile(e.target?.files[0])
                     field.onChange(e)
                   }}
