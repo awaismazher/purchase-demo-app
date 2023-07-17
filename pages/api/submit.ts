@@ -3,7 +3,16 @@ import path from "path"
 import { PrismaClient } from "@prisma/client"
 import { parse } from "fast-csv"
 import multer from "multer"
-import * as z from "zod"
+import { ZodTypeAny, z } from "zod"
+
+export const notNumericString = (schema: ZodTypeAny) =>
+  z.preprocess((a) => {
+    if (typeof a === "string") {
+      return isNaN(parseInt(a, 10)) ? a : undefined
+    } else {
+      return undefined
+    }
+  }, schema)
 
 const prisma = new PrismaClient()
 const storage = multer.diskStorage({
@@ -19,7 +28,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage })
 
 const csvSchema = z.object({
-  "Model Number": z.string(),
+  "Model Number": notNumericString(z.string()),
   "Unit Price": z.number(),
   Quantity: z.number().int(),
 })
