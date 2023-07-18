@@ -17,7 +17,9 @@ const filePath = "uploads/"
 const prisma = new PrismaClient()
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    fs.mkdirSync(filePath, { recursive: true })
+    if( !fs.existsSync(filePath) ) {
+      fs.mkdirSync(filePath, { recursive: true })
+    }
     cb(null, filePath)
   },
 
