@@ -13,11 +13,12 @@ export const notNumericString = (schema: ZodTypeAny) =>
       return undefined
     }
   }, schema)
-
+const filePath = "uploads/"
 const prisma = new PrismaClient()
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/")
+    fs.mkdirSync(filePath, { recursive: true })
+    cb(null, filePath)
   },
 
   filename: (req, file, cb) => {
